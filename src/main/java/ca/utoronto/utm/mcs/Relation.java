@@ -20,8 +20,8 @@ public class Relation implements HttpHandler
         try {
             if (r.getRequestMethod().equals("GET")) {
                 handleGet(r);
-            } else if (r.getRequestMethod().equals("POST")) {
-                handlePost(r);
+            } else if (r.getRequestMethod().equals("PUT")) {
+                handlePut(r);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -51,7 +51,7 @@ public class Relation implements HttpHandler
         os.close();
     }
 
-    public void handlePost(HttpExchange r) throws IOException, JSONException{
+    public void handlePut(HttpExchange r) throws IOException, JSONException{
         /* TODO: Implement this.
            Hint: This is very very similar to the get just make sure to save
                  your result in memory instead of returning a value.*/

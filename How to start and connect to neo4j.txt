@@ -1,0 +1,16 @@
+Make it go
+----------
+
+For full instructions, see https://neo4j.com/docs/operations-manual/current/installation/
+
+To get started with Neo4j,
+1. Open a console and navigate to the install directory.
+2. Start the server:
+   * Windows, use: bin\neo4j console
+   * Linux/Mac, use: ./bin/neo4j console
+3. In a browser, open http://localhost:7474/
+4. Start server from eclipse running pom.xml
+5. From any REST client or browser, open http://localhost:7474/db/data
+   in order to get a REST starting point, e.g.
+   curl -v http://localhost:7474/db/data
+6. Shutdown the server by typing Ctrl-C in the console.
