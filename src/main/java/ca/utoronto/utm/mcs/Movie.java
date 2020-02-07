@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import org.json.*;
+import org.neo4j.driver.v1.Session;
+import org.neo4j.driver.v1.StatementResult;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -28,28 +30,6 @@ public class Movie implements HttpHandler
         }
     }
 
-    public void handleGet(HttpExchange r) throws IOException, JSONException {
-        String body = Utils.convert(r.getRequestBody());
-        JSONObject deserialized = new JSONObject(body);
-
-        long first = memory.getValue();
-        long second = memory.getValue();
-
-        if (deserialized.has("firstNumber"))
-            first = deserialized.getLong("firstNumber");
-
-        if (deserialized.has("secondNumber"))
-            second = deserialized.getLong("secondNumber");
-
-        /* TODO: Implement the math logic */
-        long answer = first - second;
-
-        String response = Long.toString(answer) + "\n";
-        r.sendResponseHeaders(200, response.length());
-        OutputStream os = r.getResponseBody();
-        os.write(response.getBytes());
-        os.close();
-    }
 
     public void handlePut(HttpExchange r) throws IOException, JSONException{
         /* TODO: Implement this.
@@ -58,19 +38,72 @@ public class Movie implements HttpHandler
         String body = Utils.convert(r.getRequestBody());
         JSONObject deserialized = new JSONObject(body);
 
-        long first = memory.getValue();
-        long second = memory.getValue();
+        String id = null;
+        String name = null;
 
-        if (deserialized.has("firstNumber"))
-            first = deserialized.getLong("firstNumber");
+        if (deserialized.has("movieId") && deserialized.has("name"))
+        {
+        	id = deserialized.getString("movieId");
+        	name = deserialized.getString("name");
+        }
+        // if query doesn't have these, it's improperly formatted or missing info
+        else
+        	r.sendResponseHeaders(400, -1);
+        
+        // should not have to worry about extra data since only checks body for these two keys
+        
+        /* TODO: Implement the logic */
+    	try
+		{    		
+    		//start the session which uses driver imported from app.java
+    		Session s = App.driver.session();
+    		//create cypher query
+    		String command = "CREATE (:Movie {name: \"" + name + "\", movieId:\"" + id + "\"});";
+			//write/run cypher query
+			s.writeTransaction(tx -> tx.run(command));
+			System.out.println(command);
+			//successful so return 200
+			r.sendResponseHeaders(200, -1);
+        } catch (Exception e){
+        	//something went wrong so 500
+        	r.sendResponseHeaders(500, -1);
+        } finally {
+        	//this is just filler since we don't need to do anything in both success and failure states
+        }            
+    }
+    
+    public void handleGet(HttpExchange r) throws IOException, JSONException {
+        String body = Utils.convert(r.getRequestBody());
+        JSONObject deserialized = new JSONObject(body);
 
-        if (deserialized.has("secondNumber"))
-            second = deserialized.getLong("secondNumber");
+        String id = memory.getString();
 
-        /* TODO: Implement the math logic */
-        long answer = first - second;
-        memory.setValue(answer);
+        if (deserialized.has("movieId"))
+            id = deserialized.getString("movieId");
+        else
+        	r.sendResponseHeaders(400, -1);
 
-        r.sendResponseHeaders(200, -1);
+        /* TODO: Implement the logic */
+        try
+		{
+        	// start session
+    		Session s = App.driver.session();
+    		// create query
+    		String command = "MATCH (a:Movie) RETURN a.name;";
+    		// read this time instead of write
+			StatementResult result = s.readTransaction(tx -> tx.run(command));
+			// result is all the matches we got, iterate through while there are still matches
+			while (result.hasNext()){
+				// this will need to be replaced but for now it will print each match
+				System.out.println(result.next().toString());
+			}
+			// everything worked correctly
+			r.sendResponseHeaders(200, -1);
+        } catch (Exception e){
+        	//error
+        	r.sendResponseHeaders(500, -1);
+        } finally {
+        	//filler
+        }       
     }
 }

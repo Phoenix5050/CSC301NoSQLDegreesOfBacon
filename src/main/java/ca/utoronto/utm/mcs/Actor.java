@@ -77,7 +77,7 @@ public class Actor implements HttpHandler
     		//start the session which uses driver imported from app.java
     		Session s = App.driver.session();
     		//create cypher query
-			String command = "CREATE (:Actor {name: \" + name + \", actorId:\" + id + \"});";
+			String command = "CREATE (:Actor {name: \"" + name + "\", actorId:\"" + id + "\"});";
 			//write/run cypher query
 			s.writeTransaction(tx -> tx.run(command));
 			//successful so return 200
