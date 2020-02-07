@@ -14,7 +14,7 @@ public class App
 {
     static int PORT = 8080;
     
-    private static Driver driver;
+    public static Driver driver;
     
     public static void Login(String uri){
         driver = GraphDatabase.driver(uri, AuthTokens.basic("neo4j", "1234"));

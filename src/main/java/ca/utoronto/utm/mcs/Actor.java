@@ -8,10 +8,10 @@ import org.neo4j.driver.v1.AuthTokens;
 import org.neo4j.driver.v1.Driver;
 import org.neo4j.driver.v1.GraphDatabase;
 import org.neo4j.driver.v1.Session;
-//import org.neo4j.driver.v1.Result;
+import org.neo4j.driver.v1.StatementResult;
 import org.neo4j.driver.v1.Transaction;
 import org.neo4j.driver.v1.TransactionWork;
-
+import org.neo4j.driver.v1.Value;
 import org.json.*;
 
 import com.sun.net.httpserver.HttpExchange;
@@ -62,30 +62,37 @@ public class Actor implements HttpHandler
         /* TODO: Implement this.
            Hint: This is very very similar to the get just make sure to save
                  your result in memory instead of returning a value.*/
-    	try {
         String body = Utils.convert(r.getRequestBody());
         JSONObject deserialized = new JSONObject(body);
 
-        String first = memory.getString();
-        String second = memory.getString();
+        String id = null;
+        String name = null;
 
         if (deserialized.has("actorId"))
-            first = deserialized.getString("actorId");
+        	id = deserialized.getString("actorId");
+        else
+        	r.sendResponseHeaders(200, -1);
         if (deserialized.has("name"))
-            second = deserialized.getString("name");
-
+            name = deserialized.getString("name");
+        else
+        	r.sendResponseHeaders(400, -1);
+        // should not have to worry about extra data since only checks body for these two keys
+        
         /* TODO: Implement the logic */
-        try (Session session = org.neo4j.driver.v1.Driver.session())
-        {
-        	
-        }
+		try 
+		{
+			Session s = App.driver.session();
+			Transaction t = s.beginTransaction();
+			String command = "CREATE (a:actor {Name: " + name + ", id: " + id + "})";
+			StatementResult result = t.run(command);
+			r.sendResponseHeaders(200, -1);
+        } catch (Exception e){
+        	r.sendResponseHeaders(500, -1);
+        } finally {
+        	App.driver.close();
+        }            
         
-        // write into a try catch 
-        // catch block is a 500
-               
-        
-        //memory.setString(first);
-        /*
+		/*
          * check format to see if matches following format, else throw 400 BAD REQUEST
          * name : string
          * actorId: string
@@ -101,11 +108,6 @@ public class Actor implements HttpHandler
         /*
          * If everything functioned, send 200 OK
          */
-        r.sendResponseHeaders(200, -1);
+        
     }
-
-	private void Print(String first) {
-		// TODO Auto-generated method stub
-		
-	}
 }
