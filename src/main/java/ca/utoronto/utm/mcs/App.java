@@ -6,7 +6,7 @@ import org.neo4j.driver.v1.AuthTokens;
 import org.neo4j.driver.v1.Driver;
 import org.neo4j.driver.v1.GraphDatabase;
 import org.neo4j.driver.v1.Session;
-//import org.neo4j.driver.v1.Result;
+import org.neo4j.driver.v1.StatementResult;
 import org.neo4j.driver.v1.Transaction;
 import org.neo4j.driver.v1.TransactionWork;
 
@@ -16,13 +16,14 @@ public class App
     
     public static Driver driver;
     
-    public static void Login(String uri){
-        driver = GraphDatabase.driver(uri, AuthTokens.basic("neo4j", "1234"));
+    public static void Login(){
+        driver = GraphDatabase.driver("bolt://localhost:7687", AuthTokens.basic("neo4j", "1234"));
     }
     
     public static void main(String[] args) throws IOException
     {
         HttpServer server = HttpServer.create(new InetSocketAddress("0.0.0.0", PORT), 0);
+        Login();
         
         Memory mem = new Memory();
         server.createContext("/api/v1/addActor", new Actor(mem));
