@@ -62,9 +62,9 @@ public class BaconNumber implements HttpHandler
     		String command = "MATCH p=shortestPath((bacon:Actor {actorId:\"nm0000102\"})-[*]-(meg:Actor {actorId:\"" + id + "\"}))  RETURN p";
     		// read this time instead of write
 			StatementResult result = s.readTransaction(tx -> tx.run(command));	
-			
+
     		if (!validActor) {
-        		// query for movies of movieId
+        		// query for actors of actorId
     			s.writeTransaction(tx -> tx.run(command));
 				if (!result.hasNext()) {
 	    			//error 404 actor not found
@@ -81,13 +81,16 @@ public class BaconNumber implements HttpHandler
 				// divide by two to get bacon number
 				int num = baconNum.replaceAll("[^,]","").length();
 				num=(num+1)/2;
-				String ret = "{\"baconNumber\": \"" + num + "\"}";
-				r.sendResponseHeaders(200, ret.length());
-		        OutputStream os = r.getResponseBody();
-		        os.write(ret.getBytes());
-		        os.close();
-    		}
-	        
+				if (num > 6 || num < 0) {
+					r.sendResponseHeaders(404, -1);
+				} else {
+					String ret = "{\"baconNumber\": \"" + num + "\"}";
+					r.sendResponseHeaders(200, ret.length());
+			        OutputStream os = r.getResponseBody();
+			        os.write(ret.getBytes());
+			        os.close();
+				}
+			}
         } catch (Exception e){
         	//error
         	r.sendResponseHeaders(500, -1);
