@@ -1,0 +1,14 @@
+Import actors
+LOAD CSV FROM "file:///actors.tsv" AS data FIELDTERMINATOR '\t' CREATE (:Actor {actorId: data[0], name: data[1]});
+
+Import movies
+LOAD CSV FROM "file:///movies.tsv" AS data FIELDTERMINATOR '\t' CREATE (:Movies {movieId: data[0], name: data[2]});
+
+Import relationships to a temporary collection
+LOAD CSV FROM "file:///relationships.tsv" AS data FIELDTERMINATOR '\t' CREATE (:TEMP {mid: data[0], aid: data[2]});
+
+Create relationships:
+MATCH (t:TEMP),(m:Movies),(a:Actor) WHERE (t.mid=m.movieId AND t.aid=a.actorId) CREATE (a)-[:ActedIn]->(m);
+
+Remove TEMP nodes:
+MATCH (t:TEMP) DELETE t;
