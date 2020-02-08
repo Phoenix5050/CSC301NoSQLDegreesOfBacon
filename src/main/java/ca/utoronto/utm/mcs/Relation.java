@@ -165,14 +165,14 @@ public class Relation implements HttpHandler
 				String TorF = result.next().toString();
 				TorF = TorF.substring(36, TorF.length()-2);
 				if (TorF.equals("TRUE")) {
-					String ret = "\"actorId\": \"" + actorId + "\", \"movieId\": \"" + movieId +"\", \"hasRelationship\": true";
+					String ret = "{\"actorId\": \"" + actorId + "\", \"movieId\": \"" + movieId +"\", \"hasRelationship\": true}";
 					r.sendResponseHeaders(200, ret.length());
 			        OutputStream os = r.getResponseBody();
 			        os.write(ret.getBytes());
 			        os.close();
 				}
 				else {
-					String ret = "\"actorId\": \"" + actorId + "\", \"movieId\": \"" + movieId +"\", \"hasRelationship\": false";
+					String ret = "{\"actorId\": \"" + actorId + "\", \"movieId\": \"" + movieId +"\", \"hasRelationship\": false}";
 					r.sendResponseHeaders(200, ret.length());
 			        OutputStream os = r.getResponseBody();
 			        os.write(ret.getBytes());

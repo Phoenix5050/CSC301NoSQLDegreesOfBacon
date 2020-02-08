@@ -12,6 +12,7 @@ import com.sun.net.httpserver.HttpHandler;
 
 public class BaconNumber implements HttpHandler
 {
+    private static boolean validActor;
     private static Memory memory;
 
     public BaconNumber(Memory mem) {
@@ -20,6 +21,7 @@ public class BaconNumber implements HttpHandler
 
     public void handle(HttpExchange r) {
         try {
+        	validActor = false;
             if (r.getRequestMethod().equals("GET")) {
                 handleGet(r);
             }
@@ -60,18 +62,33 @@ public class BaconNumber implements HttpHandler
     		String command = "MATCH p=shortestPath((bacon:Actor {actorId:\"nm0000102\"})-[*]-(meg:Actor {actorId:\"" + id + "\"}))  RETURN p";
     		// read this time instead of write
 			StatementResult result = s.readTransaction(tx -> tx.run(command));	
+			
+    		if (!validActor) {
+        		// query for movies of movieId
+    			s.writeTransaction(tx -> tx.run(command));
+				if (!result.hasNext()) {
+	    			//error 404 actor not found
+					System.out.println("Error 404: Actor not found.");
+	    			r.sendResponseHeaders(404, -1);
+				} else {
+					System.out.println("validActor = true");
+					validActor = true;
+				}
+    		}
 
-			String baconNum= result.next().toString();
-			// count number of commas (one for every connection from actor to movie or movie to actor)
-			// add one to make even number
-			// divide by two to get bacon number
-			int num = baconNum.replaceAll("[^,]","").length();
-			num=(num+1)/2;
-			String ret = "{\"baconNumber\": \"" + num + "\"}";
-			r.sendResponseHeaders(200, ret.length());
-	        OutputStream os = r.getResponseBody();
-	        os.write(ret.getBytes());
-	        os.close();
+    		if (validActor) {
+				String baconNum = result.next().toString();
+				// count number of commas (one for every connection from actor to movie or movie to actor)
+				// add one to make even number
+				// divide by two to get bacon number
+				int num = baconNum.replaceAll("[^,]","").length();
+				num=(num+1)/2;
+				String ret = "{\"baconNumber\": \"" + num + "\"}";
+				r.sendResponseHeaders(200, ret.length());
+		        OutputStream os = r.getResponseBody();
+		        os.write(ret.getBytes());
+		        os.close();
+    		}
 	        
         } catch (Exception e){
         	//error

@@ -149,7 +149,7 @@ public class Actor implements HttpHandler
 					ret=ret+"\""+movie+"\", ";
 				}
 				ret=ret.substring(0, ret.length() - 2);
-				ret=ret+"]";
+				ret="{"+ret+"]}";
 				
 				// everything worked correctly			
 				r.sendResponseHeaders(200, ret.length());
