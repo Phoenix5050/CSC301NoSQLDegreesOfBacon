@@ -68,21 +68,29 @@ public class BaconPath implements HttpHandler
 			int num = baconNum.replaceAll("[^,]","").length();
 			num=(num+1)/2;
 			String ret = "{\"baconNumber\": \"" + num + "\" \"baconPath\":[";
-			System.out.print(baconNum+"\n");
 			Boolean record = false;
-			String currentId=null;
+			String currentId="";
 			//iterate backwards through the return
 			for (int i = baconNum.length() - 4; i >= 0; i--) {
 				char letter = baconNum.charAt(i);
 				if (String.valueOf(letter).equals(")")){
 					record = true;
 				}
-				else if(String.valueOf(letter).equals(")")) {
+				else if(String.valueOf(letter).equals("(")) {
+					currentId=currentId.substring(1);
+					String reverse = new StringBuffer(currentId).reverse().toString();
+					String newCommand = "MATCH (s) WHERE ID(s) = " + reverse + " RETURN s.movieId, s.actorId";
+					System.out.println(newCommand);
+					StatementResult newResult = s.writeTransaction(tx -> tx.run(newCommand));
+					String thing = newResult.next().toString();
+					String movieId = thing.substring(19);
+					movieId = movieId.split("\\.", 4)[0];
+					String actorId = thing.substring(0,thing.length());
 					
-					currentId=null;
+					currentId="";
 					record = false;
 				}
-				if (record = true) {
+				if (record == true) {
 					currentId=currentId+String.valueOf(letter);
 				}
 			}
