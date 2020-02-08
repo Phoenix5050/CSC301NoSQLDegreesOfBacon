@@ -70,23 +70,44 @@ public class BaconPath implements HttpHandler
 			String ret = "{\"baconNumber\": \"" + num + "\" \"baconPath\":[";
 			Boolean record = false;
 			String currentId="";
+			String prev = "";
 			//iterate backwards through the return
 			for (int i = baconNum.length() - 4; i >= 0; i--) {
 				char letter = baconNum.charAt(i);
 				if (String.valueOf(letter).equals(")")){
 					record = true;
 				}
+				
 				else if(String.valueOf(letter).equals("(")) {
 					currentId=currentId.substring(1);
 					String reverse = new StringBuffer(currentId).reverse().toString();
 					String newCommand = "MATCH (s) WHERE ID(s) = " + reverse + " RETURN s.movieId, s.actorId";
-					System.out.println(newCommand);
 					StatementResult newResult = s.writeTransaction(tx -> tx.run(newCommand));
 					String thing = newResult.next().toString();
 					String movieId = thing.substring(19);
-					movieId = movieId.split("\\.", 4)[0];
-					String actorId = thing.substring(0,thing.length());
-					
+					movieId = movieId.split("\\.", 3)[0];
+					movieId = movieId.substring(0,movieId.length()-3);
+					if (movieId.equals("NULL")) {
+						String actorId = thing.substring(0,thing.length()-2);
+						actorId=actorId.replaceAll(".+,", "");
+						actorId=actorId.substring(12);
+						if (prev.equals("")) {
+							prev=actorId;
+						}
+						else {
+							ret=ret+"{\"actorId\": " + actorId + ", \"movieId\": " + prev + "}, ";
+							prev="";
+						}
+					}
+					else {
+						if (prev.equals("")) {
+							prev=movieId;
+						}
+						else {
+							ret=ret+"{\"actorId\": " + prev + ", \"movieId\": " + movieId + "}, ";
+							prev="";
+						}
+					}
 					currentId="";
 					record = false;
 				}
@@ -94,7 +115,7 @@ public class BaconPath implements HttpHandler
 					currentId=currentId+String.valueOf(letter);
 				}
 			}
-			ret=ret+"]}";
+			ret=ret.substring(0, ret.length() - 2)+"]}";
 			r.sendResponseHeaders(200, ret.length());
 	        OutputStream os = r.getResponseBody();
 	        os.write(ret.getBytes());
