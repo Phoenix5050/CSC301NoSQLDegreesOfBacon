@@ -59,7 +59,6 @@ public class Relation implements HttpHandler
     		//create cypher query
     		String command = "MATCH (a:Actor), (m:Movie) WHERE (\"" + movieId + "\"=m.movieId AND \"" + actorId + "\"=a.actorId) CREATE (a)-[:ActedIn]->(m);";
 			//write/run cypher query
-    		System.out.println(command);
 			s.writeTransaction(tx -> tx.run(command));
 			//successful so return 200
 			r.sendResponseHeaders(200, -1);

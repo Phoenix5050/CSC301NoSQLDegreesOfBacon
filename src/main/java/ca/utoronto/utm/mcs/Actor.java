@@ -1,8 +1,11 @@
 package ca.utoronto.utm.mcs;
 
 import java.io.IOException;
+import org.json.JSONObject;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
+
 import com.sun.net.httpserver.HttpServer;
 import org.neo4j.driver.v1.AuthTokens;
 import org.neo4j.driver.v1.Driver;
@@ -115,16 +118,36 @@ public class Actor implements HttpHandler
         	// start session
     		Session s = App.driver.session();
     		// create query
-    		String command = "MATCH (a:Actor) RETURN a.name;";
+    		String command = "MATCH (a:Actor {actorId: \"" + id + "\"})-[r]-(b) RETURN  a.name, b.name;";
     		// read this time instead of write
-			StatementResult result = s.readTransaction(tx -> tx.run(command));
+			StatementResult result = s.readTransaction(tx -> tx.run(command));		
+			
+			Boolean first = true;
+			String name=null;
+			String ret=null;			
 			// result is all the matches we got, iterate through while there are still matches
 			while (result.hasNext()){
-				// this will need to be replaced but for now it will print each match
-				System.out.println(result.next().toString());
+				String line = result.next().toString();
+				if (first==true) {
+					first=false;
+					name=line.substring(17);
+					name=name.split("\"")[0];
+					ret = "\"actorId\": \"" + id + "\", \"name\": \"" + name +"\", \"movies\": [";
+				}
+				
+				int cut = name.length()+28;
+				String movie = line.substring(cut);
+				movie = movie.split("\"")[1];
+				ret=ret+"\""+movie+"\", ";
 			}
-			// everything worked correctly
-			r.sendResponseHeaders(200, -1);
+			ret=ret.substring(0, ret.length() - 2);
+			ret=ret+"]";
+			
+			// everything worked correctly			
+			r.sendResponseHeaders(200, ret.length());
+	        OutputStream os = r.getResponseBody();
+	        os.write(ret.getBytes());
+	        os.close();
         } catch (Exception e){
         	//error
         	r.sendResponseHeaders(500, -1);
