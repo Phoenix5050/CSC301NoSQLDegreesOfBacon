@@ -87,7 +87,7 @@ public class Relation implements HttpHandler
 				}
     		}
     		
-    		if (validActor && validMovie){
+    		if (validActor && validMovie) {
 	    		//create cypher query
 	    		String command = "MATCH (a:Actor), (m:Movie) WHERE (\"" + movieId + "\"=m.movieId AND \"" + actorId + "\"=a.actorId) CREATE (a)-[:ActedIn]->(m);";
 				//write/run cypher query
@@ -124,27 +124,60 @@ public class Relation implements HttpHandler
 		{    	        	
         	// start session
     		Session s = App.driver.session();
-    		// create query
-    		//MATCH  (a:Actor {actorId: "2"}), (m:Movie {movieId: "007"}) 
-    		//RETURN EXISTS((a)-[:ActedIn]-(m))
-    		String command = "MATCH (a:Actor {actorId: \"" + actorId + "\"}), (m:Movie {movieId: \"" + movieId + "\"}) RETURN  EXISTS((a)-[:ActedIn]-(m));";
-    		// read this time instead of write
-			StatementResult result = s.readTransaction(tx -> tx.run(command));	
-			String TorF = result.next().toString();
-			TorF = TorF.substring(36, TorF.length()-2);
-			if (TorF.equals("TRUE")) {
-				String ret = "\"actorId\": \"" + actorId + "\", \"movieId\": \"" + movieId +"\", \"hasRelationship\": true";
-				r.sendResponseHeaders(200, ret.length());
-		        OutputStream os = r.getResponseBody();
-		        os.write(ret.getBytes());
-		        os.close();
-			}
-			else {
-				String ret = "\"actorId\": \"" + actorId + "\", \"movieId\": \"" + movieId +"\", \"hasRelationship\": false";
-				r.sendResponseHeaders(200, ret.length());
-		        OutputStream os = r.getResponseBody();
-		        os.write(ret.getBytes());
-		        os.close();
+
+    		if (!validActor) {
+        		String actorCommand = "MATCH (a:Actor) WHERE a.actorId=\"" + actorId + "\" RETURN a.name;";
+        		// query for actors of actorId
+    			s.writeTransaction(tx -> tx.run(actorCommand));
+    			StatementResult result = s.readTransaction(tx -> tx.run(actorCommand));
+				if (!result.hasNext()) {
+	    			//error 404 actor not found
+					System.out.println("Error 404: Actor not found.");
+	    			r.sendResponseHeaders(404, -1);
+				} else {
+					System.out.println("validActor = true");
+					validActor = true;
+				}
+    		}
+    		
+    		if (validActor && !validMovie) {
+        		String movieCommand = "MATCH (m:Movie) WHERE m.movieId=\"" + movieId + "\" RETURN m.name;";
+        		// query for movies of movieId
+    			s.writeTransaction(tx -> tx.run(movieCommand));
+    			StatementResult result = s.readTransaction(tx -> tx.run(movieCommand));
+				if (!result.hasNext()) {
+	    			//error 404 movie not found
+					System.out.println("Error 404: Movie not found.");
+	    			r.sendResponseHeaders(404, -1);
+				} else {
+					System.out.println("validMovie = true");
+					validMovie = true;
+				}
+    		}
+
+    		if (validActor && validMovie) {
+	    		// create query
+	    		//MATCH  (a:Actor {actorId: "2"}), (m:Movie {movieId: "007"}) 
+	    		//RETURN EXISTS((a)-[:ActedIn]-(m))
+	    		String command = "MATCH (a:Actor {actorId: \"" + actorId + "\"}), (m:Movie {movieId: \"" + movieId + "\"}) RETURN  EXISTS((a)-[:ActedIn]-(m));";
+	    		// read this time instead of write
+				StatementResult result = s.readTransaction(tx -> tx.run(command));	
+				String TorF = result.next().toString();
+				TorF = TorF.substring(36, TorF.length()-2);
+				if (TorF.equals("TRUE")) {
+					String ret = "\"actorId\": \"" + actorId + "\", \"movieId\": \"" + movieId +"\", \"hasRelationship\": true";
+					r.sendResponseHeaders(200, ret.length());
+			        OutputStream os = r.getResponseBody();
+			        os.write(ret.getBytes());
+			        os.close();
+				}
+				else {
+					String ret = "\"actorId\": \"" + actorId + "\", \"movieId\": \"" + movieId +"\", \"hasRelationship\": false";
+					r.sendResponseHeaders(200, ret.length());
+			        OutputStream os = r.getResponseBody();
+			        os.write(ret.getBytes());
+			        os.close();
+				}
 			}
         } catch (Exception e){
         	//error

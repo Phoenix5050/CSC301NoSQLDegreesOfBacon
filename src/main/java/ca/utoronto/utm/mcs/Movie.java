@@ -12,6 +12,7 @@ import com.sun.net.httpserver.HttpHandler;
 
 public class Movie implements HttpHandler
 {
+    private static boolean validMovie;
     private static Memory memory;
 
     public Movie(Memory mem) {
@@ -20,6 +21,7 @@ public class Movie implements HttpHandler
 
     public void handle(HttpExchange r) {
         try {
+        	validMovie = false;
             if (r.getRequestMethod().equals("GET")) {
                 handleGet(r);
             } else if (r.getRequestMethod().equals("PUT")) {
@@ -29,8 +31,7 @@ public class Movie implements HttpHandler
             e.printStackTrace();
         }
     }
-
-
+    
     public void handlePut(HttpExchange r) throws IOException, JSONException{
         /* TODO: Implement this.
            Hint: This is very very similar to the get just make sure to save
@@ -93,32 +94,47 @@ public class Movie implements HttpHandler
     		// read this time instead of write
 			StatementResult result = s.readTransaction(tx -> tx.run(command));		
 			
-			Boolean first = true;
-			String name=null;
-			String ret=null;			
-			// result is all the matches we got, iterate through while there are still matches
-			while (result.hasNext()){
-				String line = result.next().toString();
-				if (first==true) {
-					first=false;
-					name=line.substring(17);
-					name=name.split("\"")[0];
-					ret = "\"actorId\": \"" + id + "\", \"name\": \"" + name +"\", \"actors\": [";
+    		if (!validMovie) {
+        		// query for movies of movieId
+    			s.writeTransaction(tx -> tx.run(command));
+				if (!result.hasNext()) {
+	    			//error 404 movie not found
+					System.out.println("Error 404: Movie not found.");
+	    			r.sendResponseHeaders(404, -1);
+				} else {
+					System.out.println("validMovie = true");
+					validMovie = true;
 				}
+    		}
+    		
+    		if (validMovie) {
+				Boolean first = true;
+				String name=null;
+				String ret=null;			
+				// result is all the matches we got, iterate through while there are still matches
+				while (result.hasNext()){
+					String line = result.next().toString();
+					if (first==true) {
+						first=false;
+						name=line.substring(17);
+						name=name.split("\"")[0];
+						ret = "\"actorId\": \"" + id + "\", \"name\": \"" + name +"\", \"actors\": [";
+					}
+					
+					int cut = name.length()+28;
+					String movie = line.substring(cut);
+					movie = movie.split("\"")[1];
+					ret=ret+"\""+movie+"\", ";
+				}
+				ret=ret.substring(0, ret.length() - 2);
+				ret=ret+"]";
 				
-				int cut = name.length()+28;
-				String movie = line.substring(cut);
-				movie = movie.split("\"")[1];
-				ret=ret+"\""+movie+"\", ";
-			}
-			ret=ret.substring(0, ret.length() - 2);
-			ret=ret+"]";
-			
-			// everything worked correctly			
-			r.sendResponseHeaders(200, ret.length());
-	        OutputStream os = r.getResponseBody();
-	        os.write(ret.getBytes());
-	        os.close();
+				// everything worked correctly			
+				r.sendResponseHeaders(200, ret.length());
+		        OutputStream os = r.getResponseBody();
+		        os.write(ret.getBytes());
+		        os.close();
+    		}
         } catch (Exception e){
         	//error
         	r.sendResponseHeaders(500, -1);
