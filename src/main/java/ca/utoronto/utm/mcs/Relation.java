@@ -12,6 +12,7 @@ import com.sun.net.httpserver.HttpHandler;
 
 public class Relation implements HttpHandler
 {
+    private static boolean validActor, validMovie;
     private static Memory memory;
 
     public Relation(Memory mem) {
@@ -20,6 +21,8 @@ public class Relation implements HttpHandler
 
     public void handle(HttpExchange r) {
         try {
+        	validActor = false;
+        	validMovie = false;
             if (r.getRequestMethod().equals("GET")) {
                 handleGet(r);
             } else if (r.getRequestMethod().equals("PUT")) {
@@ -34,7 +37,7 @@ public class Relation implements HttpHandler
         /* TODO: Implement this.
            Hint: This is very very similar to the get just make sure to save
                  your result in memory instead of returning a value.*/
-        String body = Utils.convert(r.getRequestBody());
+    	String body = Utils.convert(r.getRequestBody());
         JSONObject deserialized = new JSONObject(body);
 
         String movieId = null;
@@ -49,20 +52,50 @@ public class Relation implements HttpHandler
         else
         	r.sendResponseHeaders(400, -1);
         
-        /* TODO: Implement the logic */
     	try
-		{    		
+		{
     		//start the session which uses driver imported from app.java
     		Session s = App.driver.session();
-    		//to do:
-    		// add get for actor id and movie id and if one does not exist, throw 404 not found error
     		
-    		//create cypher query
-    		String command = "MATCH (a:Actor), (m:Movie) WHERE (\"" + movieId + "\"=m.movieId AND \"" + actorId + "\"=a.actorId) CREATE (a)-[:ActedIn]->(m);";
-			//write/run cypher query
-			s.writeTransaction(tx -> tx.run(command));
-			//successful so return 200
-			r.sendResponseHeaders(200, -1);
+    		if (!validActor) {
+        		String actorCommand = "MATCH (a:Actor) WHERE a.actorId=\"" + actorId + "\" RETURN a.name;";
+        		// query for actors of actorId
+    			s.writeTransaction(tx -> tx.run(actorCommand));
+    			StatementResult result = s.readTransaction(tx -> tx.run(actorCommand));
+				if (!result.hasNext()) {
+	    			//error 404 actor not found
+					System.out.println("Error 404: Actor not found.");
+	    			r.sendResponseHeaders(404, -1);
+				} else {
+					System.out.println("validActor = true");
+					validActor = true;
+				}
+    		}
+    		
+    		if (validActor && !validMovie) {
+        		String movieCommand = "MATCH (m:Movie) WHERE m.movieId=\"" + movieId + "\" RETURN m.name;";
+        		// query for movies of movieId
+    			s.writeTransaction(tx -> tx.run(movieCommand));
+    			StatementResult result = s.readTransaction(tx -> tx.run(movieCommand));
+				if (!result.hasNext()) {
+	    			//error 404 movie not found
+					System.out.println("Error 404: Movie not found.");
+	    			r.sendResponseHeaders(404, -1);
+				} else {
+					System.out.println("validMovie = true");
+					validMovie = true;
+				}
+    		}
+    		
+    		if (validActor && validMovie){
+	    		//create cypher query
+	    		String command = "MATCH (a:Actor), (m:Movie) WHERE (\"" + movieId + "\"=m.movieId AND \"" + actorId + "\"=a.actorId) CREATE (a)-[:ActedIn]->(m);";
+				//write/run cypher query
+	    		System.out.println(command);
+				s.writeTransaction(tx -> tx.run(command));
+				//successful so return 200
+				r.sendResponseHeaders(200, -1);
+    		}
         } catch (Exception e){
         	//something went wrong so 500
         	r.sendResponseHeaders(500, -1);
