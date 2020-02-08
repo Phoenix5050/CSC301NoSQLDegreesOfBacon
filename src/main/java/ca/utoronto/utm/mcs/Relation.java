@@ -64,10 +64,8 @@ public class Relation implements HttpHandler
     			StatementResult result = s.readTransaction(tx -> tx.run(actorCommand));
 				if (!result.hasNext()) {
 	    			//error 404 actor not found
-					System.out.println("Error 404: Actor not found.");
 	    			r.sendResponseHeaders(404, -1);
 				} else {
-					System.out.println("validActor = true");
 					validActor = true;
 				}
     		}
@@ -79,10 +77,8 @@ public class Relation implements HttpHandler
     			StatementResult result = s.readTransaction(tx -> tx.run(movieCommand));
 				if (!result.hasNext()) {
 	    			//error 404 movie not found
-					System.out.println("Error 404: Movie not found.");
 	    			r.sendResponseHeaders(404, -1);
 				} else {
-					System.out.println("validMovie = true");
 					validMovie = true;
 				}
     		}
@@ -91,7 +87,7 @@ public class Relation implements HttpHandler
 	    		//create cypher query
 	    		String command = "MATCH (a:Actor), (m:Movie) WHERE (\"" + movieId + "\"=m.movieId AND \"" + actorId + "\"=a.actorId) CREATE (a)-[:ActedIn]->(m);";
 				//write/run cypher query
-	    		System.out.println(command);
+//	    		System.out.println(command);
 				s.writeTransaction(tx -> tx.run(command));
 				//successful so return 200
 				r.sendResponseHeaders(200, -1);
@@ -132,10 +128,8 @@ public class Relation implements HttpHandler
     			StatementResult result = s.readTransaction(tx -> tx.run(actorCommand));
 				if (!result.hasNext()) {
 	    			//error 404 actor not found
-					System.out.println("Error 404: Actor not found.");
 	    			r.sendResponseHeaders(404, -1);
 				} else {
-					System.out.println("validActor = true");
 					validActor = true;
 				}
     		}
@@ -147,10 +141,8 @@ public class Relation implements HttpHandler
     			StatementResult result = s.readTransaction(tx -> tx.run(movieCommand));
 				if (!result.hasNext()) {
 	    			//error 404 movie not found
-					System.out.println("Error 404: Movie not found.");
 	    			r.sendResponseHeaders(404, -1);
 				} else {
-					System.out.println("validMovie = true");
 					validMovie = true;
 				}
     		}

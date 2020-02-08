@@ -121,10 +121,8 @@ public class Actor implements HttpHandler
     			s.writeTransaction(tx -> tx.run(command));
 				if (!result.hasNext()) {
 	    			//error 404 actor not found
-					System.out.println("Error 404: Actor not found.");
 	    			r.sendResponseHeaders(404, -1);
 				} else {
-					System.out.println("validActor = true");
 					validActor = true;
 				}
     		}

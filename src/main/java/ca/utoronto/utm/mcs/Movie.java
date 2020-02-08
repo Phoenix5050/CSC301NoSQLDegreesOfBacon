@@ -62,7 +62,7 @@ public class Movie implements HttpHandler
     		String command = "CREATE (:Movie {name: \"" + name + "\", movieId:\"" + id + "\"});";
 			//write/run cypher query
 			s.writeTransaction(tx -> tx.run(command));
-			System.out.println(command);
+//			System.out.println(command);
 			//successful so return 200
 			r.sendResponseHeaders(200, -1);
         } catch (Exception e){
@@ -99,10 +99,8 @@ public class Movie implements HttpHandler
     			s.writeTransaction(tx -> tx.run(command));
 				if (!result.hasNext()) {
 	    			//error 404 movie not found
-					System.out.println("Error 404: Movie not found.");
 	    			r.sendResponseHeaders(404, -1);
 				} else {
-					System.out.println("validMovie = true");
 					validMovie = true;
 				}
     		}
