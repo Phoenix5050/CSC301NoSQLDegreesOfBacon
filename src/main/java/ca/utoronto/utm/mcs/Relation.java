@@ -5,6 +5,7 @@ import java.io.OutputStream;
 
 import org.json.*;
 import org.neo4j.driver.v1.Session;
+import org.neo4j.driver.v1.StatementResult;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -71,25 +72,52 @@ public class Relation implements HttpHandler
     }
 
     public void handleGet(HttpExchange r) throws IOException, JSONException {
-        String body = Utils.convert(r.getRequestBody());
+    	String body = Utils.convert(r.getRequestBody());
         JSONObject deserialized = new JSONObject(body);
 
-        long first = memory.getValue();
-        long second = memory.getValue();
+        String movieId = null;
+        String actorId = null;
 
-        if (deserialized.has("firstNumber"))
-            first = deserialized.getLong("firstNumber");
+        if (deserialized.has("movieId") && deserialized.has("actorId"))
+        {
+        	movieId = deserialized.getString("movieId");
+        	actorId = deserialized.getString("actorId");
+        }
+        else
+        	r.sendResponseHeaders(400, -1);
 
-        if (deserialized.has("secondNumber"))
-            second = deserialized.getLong("secondNumber");
-
-        /* TODO: Implement the math logic */
-        long answer = first - second;
-
-        String response = Long.toString(answer) + "\n";
-        r.sendResponseHeaders(200, response.length());
-        OutputStream os = r.getResponseBody();
-        os.write(response.getBytes());
-        os.close();
+        /* TODO: Implement the logic */
+        try
+		{    	        	
+        	// start session
+    		Session s = App.driver.session();
+    		// create query
+    		//MATCH  (a:Actor {actorId: "2"}), (m:Movie {movieId: "007"}) 
+    		//RETURN EXISTS((a)-[:ActedIn]-(m))
+    		String command = "MATCH (a:Actor {actorId: \"" + actorId + "\"}), (m:Movie {movieId: \"" + movieId + "\"}) RETURN  EXISTS((a)-[:ActedIn]-(m));";
+    		// read this time instead of write
+			StatementResult result = s.readTransaction(tx -> tx.run(command));	
+			String TorF = result.next().toString();
+			TorF = TorF.substring(36, TorF.length()-2);
+			if (TorF.equals("TRUE")) {
+				String ret = "\"actorId\": \"" + actorId + "\", \"movieId\": \"" + movieId +"\", \"hasRelationship\": true";
+				r.sendResponseHeaders(200, ret.length());
+		        OutputStream os = r.getResponseBody();
+		        os.write(ret.getBytes());
+		        os.close();
+			}
+			else {
+				String ret = "\"actorId\": \"" + actorId + "\", \"movieId\": \"" + movieId +"\", \"hasRelationship\": false";
+				r.sendResponseHeaders(200, ret.length());
+		        OutputStream os = r.getResponseBody();
+		        os.write(ret.getBytes());
+		        os.close();
+			}
+        } catch (Exception e){
+        	//error
+        	r.sendResponseHeaders(500, -1);
+        } finally {
+        	//filler
+        }     
     }
 }

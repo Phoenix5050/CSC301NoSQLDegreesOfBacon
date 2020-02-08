@@ -73,7 +73,7 @@ public class Movie implements HttpHandler
     }
     
     public void handleGet(HttpExchange r) throws IOException, JSONException {
-        String body = Utils.convert(r.getRequestBody());
+    	String body = Utils.convert(r.getRequestBody());
         JSONObject deserialized = new JSONObject(body);
 
         String id = memory.getString();
@@ -85,25 +85,45 @@ public class Movie implements HttpHandler
 
         /* TODO: Implement the logic */
         try
-		{
+		{    	        	
         	// start session
     		Session s = App.driver.session();
     		// create query
-    		String command = "MATCH (a:Movie) RETURN a.name;";
+    		String command = "MATCH (a:Movie {movieId: \"" + id + "\"})-[r]-(b) RETURN  a.name, b.actorId;";
     		// read this time instead of write
-			StatementResult result = s.readTransaction(tx -> tx.run(command));
+			StatementResult result = s.readTransaction(tx -> tx.run(command));		
+			
+			Boolean first = true;
+			String name=null;
+			String ret=null;			
 			// result is all the matches we got, iterate through while there are still matches
 			while (result.hasNext()){
-				// this will need to be replaced but for now it will print each match
-				System.out.println(result.next().toString());
+				String line = result.next().toString();
+				if (first==true) {
+					first=false;
+					name=line.substring(17);
+					name=name.split("\"")[0];
+					ret = "\"actorId\": \"" + id + "\", \"name\": \"" + name +"\", \"actors\": [";
+				}
+				
+				int cut = name.length()+28;
+				String movie = line.substring(cut);
+				movie = movie.split("\"")[1];
+				ret=ret+"\""+movie+"\", ";
 			}
-			// everything worked correctly
-			r.sendResponseHeaders(200, -1);
+			ret=ret.substring(0, ret.length() - 2);
+			ret=ret+"]";
+			
+			// everything worked correctly			
+			r.sendResponseHeaders(200, ret.length());
+	        OutputStream os = r.getResponseBody();
+	        os.write(ret.getBytes());
+	        os.close();
         } catch (Exception e){
         	//error
         	r.sendResponseHeaders(500, -1);
         } finally {
         	//filler
-        }       
+        }     
     }
 }

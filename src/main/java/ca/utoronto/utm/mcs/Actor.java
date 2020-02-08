@@ -106,19 +106,11 @@ public class Actor implements HttpHandler
 
         /* TODO: Implement the logic */
         try
-		{    	
-        	/* old code ignore
-        	 * //Transaction t = s.beginTransaction();
-				//String command = "MATCH (a:Actor {actorId:\"" + id + "\"}) RETURN a;";
-	    		//StatementResult result = t.run(command);
-				// shortest path method in neo4j to calculate degrees of bacon
-				// count # of movies to return number
-        	 */
-        	
+		{    	     	
         	// start session
     		Session s = App.driver.session();
     		// create query
-    		String command = "MATCH (a:Actor {actorId: \"" + id + "\"})-[r]-(b) RETURN  a.name, b.name;";
+    		String command = "MATCH (a:Actor {actorId: \"" + id + "\"})-[r]-(b) RETURN  a.name, b.movieId;";
     		// read this time instead of write
 			StatementResult result = s.readTransaction(tx -> tx.run(command));		
 			
